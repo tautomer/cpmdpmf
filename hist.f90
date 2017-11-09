@@ -4,9 +4,6 @@ subroutine prob(i, hist, v)
 
     integer, intent(in) :: i
     real*8, intent(out) :: hist(n), v(n)
-    integer j, k, m, nc, nat, trash, bin
-    real*8 x
-    real*8 tmp, tmp1, tmp2, tmp3, dist, dist1, dist2
     character(len=12) :: str_i
     character(len=20) :: input, output, test
     character(len=*), parameter :: prefix = "traj_", test_sub = ".test", &
@@ -71,7 +68,7 @@ subroutine read_rpmd_traj(i, hist)
     implicit none
 
     integer j, k, l, m, bin, junk, nline
-    real*8 r(natom, 3), d(3, 3), dist, tmp, l1, l2
+    real*8 r(natom, 3), d(3, 3), dist, l1, l2
     integer, intent(in) :: i
     real*8, intent(out) :: hist(n)
 

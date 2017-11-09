@@ -30,24 +30,18 @@ subroutine read_meta()
              &| head -1) | cut -d' ' -f1); echo $nb $nat >> tmpin"
     rmtmp = "rm -f tmpin"
     call getcwd(rootdir)
-!    do i = 1, nw
-!        path = trim("./" // adjustl(dir(i)))
-!        call chdir(path)
-!        call system(getcfg)
-!        if(i.eq.1) call system(getmol)
-!        open(unit=11, file='tmpin')
-!        read(11, *) ind, xi(i), ks(i)
-!        read(11, *) nsteps(i)
-!        if(i.eq.1) read(11, *) nb, natom
-!        close(11)
-!        call chdir(rootdir)
-!    end do
-open(unit=11, file='xi')
-read(11, *) xi
-close(11)
-ks = 0.3
-nb = 1
-natom = 1
+    do i = 1, nw
+        path = trim("./" // adjustl(dir(i)))
+        call chdir(path)
+        call system(getcfg)
+        if(i.eq.1) call system(getmol)
+        open(unit=11, file='tmpin')
+        read(11, *) ind, xi(i), ks(i)
+        read(11, *) nsteps(i)
+        if(i.eq.1) read(11, *) nb, natom
+        close(11)
+        call chdir(rootdir)
+    end do
 end subroutine
 
 subroutine init_param(date)

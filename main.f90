@@ -3,7 +3,7 @@ program wham
     implicit none
     !use omp_lib
 
-    integer i, j, k
+    integer i
     ! w(:,:)          biasing potential
     ! p_biased(:,:)   biased distribution
     ! p_unbiased(:)

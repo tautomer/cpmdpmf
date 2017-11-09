@@ -48,6 +48,7 @@ subroutine init_param(date)
     use global
     implicit none
     integer i
+    logical ex
     character(len=30), intent(in) ::  date
 
     wbin = wbin * fac
@@ -71,4 +72,11 @@ subroutine init_param(date)
     !write ( 10, '(a,i8)' ) &
     !    '# the number of threads available    = ', omp_get_max_threads ()
     close(10)
+    inquire(file="./debug", exist=ex)
+    if (ex) then
+        write(*, *) "Dir debug already exists. Cleaning it up."
+        call system("rm -f debug/*")
+    else
+        call system("mkdir -p debug")
+    end if
 end subroutine

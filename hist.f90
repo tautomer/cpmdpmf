@@ -8,7 +8,7 @@ subroutine prob(i, hist, v)
     real*8 x
     real*8 tmp, tmp1, tmp2, tmp3, dist, dist1, dist2
     character(len=12) :: str_i
-    character(len=20) :: input, output, test  ! for file reading purposesa
+    character(len=20) :: input, output, test
     character(len=*), parameter :: prefix = "traj_", test_sub = ".test", &
                                    & out_sub = ".output"
 
@@ -33,6 +33,7 @@ subroutine prob(i, hist, v)
     end if
 
     call get_biased(i, hist, v)
+    call system("mv traj_* ../debug")
 
     return
 end subroutine

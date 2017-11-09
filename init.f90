@@ -19,8 +19,8 @@ subroutine read_meta()
     implicit none
 
     integer i
-    character(len=12) :: path, rmtmp, path
-    character(len=70) :: getcfg, rootdir
+    character(len=12) :: path, rmtmp
+    character(len=70) :: getcfg
     character(len=200) :: getmol
 
     getcfg = "grep DIF inp-2 | cut -d' ' -f4-8 > tmpin; sed -n '/MAXS/{n;p;}'&
@@ -30,18 +30,24 @@ subroutine read_meta()
              &| head -1) | cut -d' ' -f1); echo $nb $nat >> tmpin"
     rmtmp = "rm -f tmpin"
     call getcwd(rootdir)
-    do i = 1, nw
-        path = trim("./" // adjustl(dir(i)))
-        call chdir(path)
-        call system(getcfg)
-        if(i.eq.1) call system(getmol)
-        open(unit=11, file='tmpin')
-        read(11, *) ind, xi(i), ks(i)
-        read(11, *) nsteps(i)
-        if(i.eq.1) read(11, *) nb, natom
-        close(11)
-        call chdir(rootdir)
-    end do
+!    do i = 1, nw
+!        path = trim("./" // adjustl(dir(i)))
+!        call chdir(path)
+!        call system(getcfg)
+!        if(i.eq.1) call system(getmol)
+!        open(unit=11, file='tmpin')
+!        read(11, *) ind, xi(i), ks(i)
+!        read(11, *) nsteps(i)
+!        if(i.eq.1) read(11, *) nb, natom
+!        close(11)
+!        call chdir(rootdir)
+!    end do
+open(unit=11, file='xi')
+read(11, *) xi(i)
+close(11)
+ks = 0.3
+nb = 1
+natom = 1
 end subroutine
 
 subroutine init_param(date)

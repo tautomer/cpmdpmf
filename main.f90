@@ -12,7 +12,6 @@ program wham
     ! v(:)
     real*8, allocatable :: hist(:), v(:), w(:,:), p_biased(:,:)
     character(len=30) :: date, cwd
-    character(len=100) :: rootdir
 
     call fdate(date)
     call read_conf()

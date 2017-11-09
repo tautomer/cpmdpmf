@@ -11,16 +11,22 @@ program wham
     ! hist(:)
     ! v(:)
     real*8, allocatable :: hist(:), v(:), w(:,:), p_biased(:,:)
-    character(len=30) ::  date
+    character(len=30) :: date, cwd
+    character(len=100) :: rootdir
 
     call fdate(date)
     call read_conf()
     call read_meta()
     call init_param(date)
     allocate(p_biased(nw , n), w(nw, n), v(n), hist(n))
+    call getcwd(rootdir)
+    write(*, *) rootdir
 
     do i = 1, nw ! loop over windows
+        cwd = trim("./" // adjustl(dir(i)))
+        call chdir(cwd)
         call prob(i, hist, v)
+        call chdir(rootdir)
         ! biased distribution of window i at coordinate xi_j
         p_biased(i, :) = hist
         ! restraining potential of window i at coordinate xi_j

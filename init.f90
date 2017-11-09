@@ -19,8 +19,8 @@ subroutine read_meta()
     implicit none
 
     integer i
-    character(len=12) :: path, rmtmp
-    character(len=70) :: getcfg
+    character(len=12) :: path, rmtmp, path
+    character(len=70) :: getcfg, rootdir
     character(len=200) :: getmol
 
     getcfg = "grep DIF inp-2 | cut -d' ' -f4-8 > tmpin; sed -n '/MAXS/{n;p;}'&

@@ -2,7 +2,7 @@
 #
 #
 #
-#FLAGS=-fopenmp
+FLAGS=-g -O0 -Wall -fcheck=all -fbacktrace
 
 objects = \
 modules.o main.o hist.o init.o

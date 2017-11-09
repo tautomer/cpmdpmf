@@ -4,7 +4,7 @@ subroutine read_conf()
 
     open(unit=20,file="config", action="read")
     read(20,*) nw
-    allocate(dir(nw), xi(nw), nsteps(nw), ni(nw))
+    allocate(dir(nw), xi(nw), nsteps(nw), ni(nw), ks(nw))
     read(20,*) wbin ! unit in angstrom
     read(20,*) ncut
     read(20,*) temp
@@ -43,7 +43,7 @@ subroutine read_meta()
 !        call chdir(rootdir)
 !    end do
 open(unit=11, file='xi')
-read(11, *) xi(i)
+read(11, *) xi
 close(11)
 ks = 0.3
 nb = 1

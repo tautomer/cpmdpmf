@@ -48,6 +48,7 @@ close(11)
 ks = 0.3
 nb = 1
 natom = 1
+nsteps = 3d4
 end subroutine
 
 subroutine init_param(date)
@@ -57,9 +58,9 @@ subroutine init_param(date)
     logical ex
     character(len=30), intent(in) ::  date
 
-    wbin = wbin * fac
-    xmax = (3 * xi(nw) - xi(nw-1)) * fac * 0.5
-    xmin = (3 * xi(1) - xi(2)) * fac * 0.5
+    wbin = wbin * 1
+    xmax = (3 * xi(nw) - xi(nw-1)) * 1 * 0.5
+    xmin = (3 * xi(1) - xi(2)) * 1 * 0.5
     n = dint((xmax - xmin) / wbin) ! total number of bins
     allocate(xbin(n))
     beta = 1.d0 / kb / temp

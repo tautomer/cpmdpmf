@@ -21,9 +21,9 @@ subroutine prob(i, hist, v)
     output = trim(prefix // adjustl(str_i)) // out_sub
     test = trim(prefix // adjustl(str_i)) // test_sub
     write(*, *) input, output
-    open(unit=20,file=input,status='old')
-    open(unit=21,file=output,status='unknown')
-    open(unit=22,file=test,status='unknown')
+    open(unit=i,file=input,status='old')
+    open(unit=i+1,file=output,status='unknown')
+    open(unit=i+2,file=test,status='unknown')
 
     hist = 0
     if(nb.eq.1) then
@@ -48,21 +48,21 @@ subroutine read_traj(i, hist)
     real*8, intent(out) :: hist(n)
 
     do k = 1, ncut
-        read(20, *)
+        read(i, *)
     end do
 
     do k = ncut + 1, nsteps(i)
-        read(20, *) junk, junk, tmp, dist
-        dist = dist - xmin + tmp
+        read(i, *) junk, dist
+        dist = dist - xmin
         dist = dist / wbin
         if((dist.ge.n).or.(dist.lt.0))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
-        write(22,*) hist(bin), bin
+        write(i+2,*) hist(bin), bin
     end do
-    close(20)
-    close(22)
+    close(i)
+    close(i+2)
     return
 end subroutine
 
@@ -78,7 +78,7 @@ subroutine read_rpmd_traj(i, hist)
     nline = nb * natom
     do k = 1, ncut
         do j = 1, nline
-            read(20, *)
+            read(i, *)
         end do
     end do
 
@@ -86,7 +86,7 @@ subroutine read_rpmd_traj(i, hist)
         d = 0
         do k = 1, nb
             do l = 1, natom
-                read(20, *) junk, r(l, :)
+                read(i, *) junk, r(l, :)
             end do
             do l = 1, 3
                 do m = 1, 3
@@ -108,10 +108,10 @@ subroutine read_rpmd_traj(i, hist)
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
-        write(22,*) hist(bin), bin
+        !write(i+2,*) hist(bin), bin
     end do
-    close(20)
-    close(22)
+    close(i)
+    close(i+2)
     return
 end subroutine
 
@@ -127,14 +127,13 @@ subroutine get_biased(i, hist, v)
 
     k = ks(i) / 2
     !     compute normalized distribution and biasing potential
-    write(21,'(a)') '# coordinate     potential     probability'
+    write(i+1,'(a)') '# coordinate     potential     probability'
     do j = 1, n
         hist(j) = hist(j) / ni(i) ! normalized probality at tmp3
-        tmp = xbin(i) - xi(i)
+        tmp = xbin(j) - xi(i)
         v(j) = k * tmp ** 2  ! biasing window potential
-        !   v(i)    = v(i)*fac1**2  ! convert potential to a.u.
-        write(21, '(4f22.7)') xbin(j), v(j), hist(j)
+        write(i+1, '(4f20.7)') xbin(j), v(j), hist(j)
     end do
-    close(21)
+    close(i+1)
     return
 end subroutine

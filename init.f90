@@ -14,11 +14,12 @@ subroutine read_conf()
 
 end subroutine
 
-subroutine read_meta()
+subroutine folderloop(sgn)
     use global
     implicit none
 
     integer i
+    integer, intent(in) :: sgn
     character(len=12) :: path, rmtmp
     character(len=70) :: getcfg
     character(len=200) :: getmol
@@ -30,28 +31,32 @@ subroutine read_meta()
              &| head -1) | cut -d' ' -f1); echo $nb $nat >> tmpin"
     rmtmp = "rm -f tmpin"
     call getcwd(rootdir)
-!    do i = 1, nw
-!        path = trim("./" // adjustl(dir(i)))
-!        call chdir(path)
-!        call system(getcfg)
-!        if(i.eq.1) call system(getmol)
-!        open(unit=11, file='tmpin')
-!        read(11, *) ind, xi(i), ks(i)
-!        read(11, *) nsteps(i)
-!        if(i.eq.1) read(11, *) nb, natom
-!        close(11)
-!        call chdir(rootdir)
-!    end do
-open(unit=11, file='xi')
-read(11, *) xi
-close(11)
-ks = 0.3
-nb = 1
-natom = 1
-nsteps = 3d4
+    open(unit=11, file='xi')
+    read(11, *) xi
+    close(11)
+    ks = 0.3
+    nb = 1
+    natom = 1
+    nsteps = 3d4
+    do i = 1, nw
+        path = trim("./" // adjustl(dir(i)))
+        call chdir(path)
+!        if(sgn.eq.1) then
+!            call system(getcfg)
+!            if(i.eq.1) call system(getmol)
+!            open(unit=11, file='tmpin')
+!            read(11, *) ind, xi(i), ks(i)
+!            read(11, *) nsteps(i)
+!            if(i.eq.1) read(11, *) nb, natom
+!            close(11)
+!        end if
+        call movefile(i, sgn)
+        call chdir(rootdir)
+    end do
 end subroutine
 
 subroutine init_param(date)
+    use omp_lib
     use global
     implicit none
     integer i
@@ -74,16 +79,44 @@ subroutine init_param(date)
     write(10, *) '# beta: ', beta
     write(10, *) '# number of windows: ', nw
     write(10, *) '# program started on ', date
-    !write ( 10, '(a,i8)' ) &
-    !    '# the number of processors available = ', omp_get_num_procs ()
-    !write ( 10, '(a,i8)' ) &
-    !    '# the number of threads available    = ', omp_get_max_threads ()
-    close(10)
-    inquire(file="./debug", exist=ex)
+    write ( 10, '(a,i8)' ) &
+        '# the number of processors available: ', omp_get_num_procs ()
+    write ( 10, '(a,i8)' ) &
+        '# the number of threads available: ', omp_get_max_threads ()
+    !!! inquire works differently in ifort and gfortran
+    !!! thinking to use a $FC variable in makefile to address this
+    inquire(directory="./debug", exist=ex)
     if (ex) then
         write(*, *) "Dir debug already exists. Cleaning it up."
+    !!! if previous job wasn't terminated finished, doing so may lose files
+    !!! currently I can back everything up once
+    !!! might be solved by inquire
         call system("rm -f debug/*")
     else
         call system("mkdir -p debug")
     end if
+    call chdir('./debug')
+end subroutine
+
+subroutine movefile(i, sgn)
+    use global
+
+    integer, intent(in) :: i, sgn
+    character(len=12) :: str_i, input
+    character(len=30) :: output
+    character(len=70) :: cmd
+
+        if(nb.eq.1) then
+            input = ' CONSTRAINT'
+        else
+            input = ' TRAJECTORY'
+        end if
+        write(str_i, *) i
+        output = trim(' ../debug/traj_' // adjustl(str_i)) // '.dat'
+        if(sgn.eq.1) then
+            cmd = trim('mv ' // adjustl(input)) // output
+        else
+            cmd = trim('mv ' // adjustl(output)) // input
+        end if
+        call system(cmd)
 end subroutine

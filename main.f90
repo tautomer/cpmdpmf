@@ -15,24 +15,24 @@ program wham
 
     call fdate(date)
     call read_conf()
-    call read_meta()
+    call folderloop(1)
     call init_param(date)
     allocate(p_biased(nw , n), w(nw, n), v(n), hist(n))
-    call getcwd(rootdir)
-    write(*, *) rootdir
+    !call getcwd(rootdir)
+    !write(*, *) rootdir
 
     !$omp parallel do &
     !$omp private(i, hist, v, cwd) &
     !$omp shared(dir, p_biased, w)
     do i = 1, nw ! loop over windows
-        cwd = trim("./" // adjustl(dir(i)))
-        call chdir(cwd)
+        !cwd = trim("./" // adjustl(dir(i)))
+        !call chdir(cwd)
         call prob(i, hist, v)
         ! biased distribution of window i at coordinate xi_j
         p_biased(i, :) = hist
         ! restraining potential of window i at coordinate xi_j
         w(i, :) = dexp(-beta * v)
-        call chdir(rootdir)
+        !call chdir(rootdir)
     end do
     !$omp end parallel do
 
@@ -95,7 +95,7 @@ subroutine unbias(w, p_biased)
         if(mod(k, 10000).eq.1) write(*, *) k, eps
     end do
     wtime = omp_get_wtime() - wtime
-    open(10,file='free_ener.dat', access='append')
+    !open(10,file='free_ener.dat', access='append')
     write(10, '(a,f6.2,a)') ' # Unbiasing took ', wtime, 's'
     write(*,*) 'converged after ', k, ' loops'
 
@@ -117,6 +117,9 @@ subroutine unbias(w, p_biased)
         tmp2 = (-invbeta * dlog(p_unbiased(j)) + pmin) * fac1
         write(10, '(2f12.7)') tmp1, tmp2
     end do
+    call system('touch exit')
+    call chdir('..')
+    call folderloop(-1)
 
     call fdate(date)
     write(10, *) '# program ended on ', date

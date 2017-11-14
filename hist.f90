@@ -1,10 +1,11 @@
 subroutine prob(i, hist, v)
+    use omp_lib
     use global
     implicit none
 
     integer, intent(in) :: i
     real*8, intent(out) :: hist(n), v(n)
-    integer j, k, m, nc, nat, trash, bin
+    integer j, k, uin
     real*8 x
     real*8 tmp, tmp1, tmp2, tmp3, dist, dist1, dist2
     character(len=12) :: str_i
@@ -13,72 +14,71 @@ subroutine prob(i, hist, v)
                                    & out_sub = ".output"
 
     write(str_i, *) i
-    if(nb.eq.1) then
-        input = 'CONSTRAINT'
-    else
-        input = 'TRAJECTORY'
-    end if
+    input = trim(prefix // adjustl(str_i)) // '.dat'
     output = trim(prefix // adjustl(str_i)) // out_sub
     test = trim(prefix // adjustl(str_i)) // test_sub
-    write(*, *) input, output
-    open(unit=i,file=input,status='old')
-    open(unit=i+1,file=output,status='unknown')
-    open(unit=i+2,file=test,status='unknown')
+    write(*, *) i, output
+    uin = 20 + omp_get_thread_num()
+    open(unit=uin, file=input, status='old')
+    uin = uin + 2 * nw
+    open(unit=uin, file=output, status='unknown')
+    uin = uin - nw
+    open(unit=uin, file=test, status='unknown')
 
     hist = 0
     if(nb.eq.1) then
-        call read_traj(i, hist)
+        call read_traj(i, hist, uin)
     else
-        call read_rpmd_traj(i, hist)
+        call read_rpmd_traj(i, hist, uin)
     end if
-
-    call get_biased(i, hist, v)
-    call system("mv traj_* ../debug")
+    call get_biased(i, hist, v, uin)
 
     return
 end subroutine
 
-subroutine read_traj(i, hist)
+subroutine read_traj(i, hist, udebug)
     use global
     implicit none
 
-    integer k, bin, junk
+    integer k, bin, junk, uin
     real*8 dist, tmp
-    integer, intent(in) :: i
+    integer, intent(in) :: i, udebug
     real*8, intent(out) :: hist(n)
 
+    uin = udebug - nw
     do k = 1, ncut
-        read(i, *)
+        read(uin, *)
     end do
 
     do k = ncut + 1, nsteps(i)
-        read(i, *) junk, dist
+        read(uin, *) junk, dist
         dist = dist - xmin
         dist = dist / wbin
         if((dist.ge.n).or.(dist.lt.0))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
-        write(i+2,*) hist(bin), bin
+        !write(udebug, *) hist(bin), bin
     end do
-    close(i)
-    close(i+2)
+    close(uin)
+    close(udebug)
     return
 end subroutine
 
-subroutine read_rpmd_traj(i, hist)
+subroutine read_rpmd_traj(i, hist, udebug)
     use global
     implicit none
 
-    integer j, k, l, m, bin, junk, nline
+    integer j, k, l, m, bin, junk, nline, uin
     real*8 r(natom, 3), d(3, 3), dist, tmp, l1, l2
-    integer, intent(in) :: i
+    integer, intent(in) :: i, udebug
     real*8, intent(out) :: hist(n)
 
+    uin = udebug - nw
     nline = nb * natom
     do k = 1, ncut
         do j = 1, nline
-            read(i, *)
+            read(uin, *)
         end do
     end do
 
@@ -86,7 +86,7 @@ subroutine read_rpmd_traj(i, hist)
         d = 0
         do k = 1, nb
             do l = 1, natom
-                read(i, *) junk, r(l, :)
+                read(uin, *) junk, r(l, :)
             end do
             do l = 1, 3
                 do m = 1, 3
@@ -108,32 +108,33 @@ subroutine read_rpmd_traj(i, hist)
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
-        !write(i+2,*) hist(bin), bin
+        !write(udebug,*) hist(bin), bin
     end do
-    close(i)
-    close(i+2)
+    close(uin)
+    close(udebug)
     return
 end subroutine
 
-subroutine get_biased(i, hist, v)
+subroutine get_biased(i, hist, v, udebug)
     use global
     implicit none
 
-    integer j
+    integer j, uout
     real*8 tmp, k
-    integer, intent(in) :: i
+    integer, intent(in) :: i, udebug
     real*8, intent(inout) :: hist(n)
     real*8, intent(out) :: v(n)
 
+    uout = udebug + nw
     k = ks(i) / 2
     !     compute normalized distribution and biasing potential
-    write(i+1,'(a)') '# coordinate     potential     probability'
+    write(uout,'(a)') '# coordinate     potential     probability'
     do j = 1, n
         hist(j) = hist(j) / ni(i) ! normalized probality at tmp3
         tmp = xbin(j) - xi(i)
         v(j) = k * tmp ** 2  ! biasing window potential
-        write(i+1, '(4f20.7)') xbin(j), v(j), hist(j)
+        write(uout, '(4f20.7)') xbin(j), v(j), hist(j)
     end do
-    close(i+1)
+    close(uout)
     return
 end subroutine

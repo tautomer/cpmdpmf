@@ -1,7 +1,7 @@
 program wham
+    use omp_lib
     use global
     implicit none
-    !use omp_lib
 
     integer i
     ! w(:,:)          biasing potential
@@ -11,26 +11,25 @@ program wham
     ! hist(:)
     ! v(:)
     real*8, allocatable :: hist(:), v(:), w(:,:), p_biased(:,:)
-    character(len=30) :: date, cwd
+    character(len=30) :: date
 
     call fdate(date)
     call read_conf()
-    call read_meta()
+    call folderloop(1)
     call init_param(date)
     allocate(p_biased(nw , n), w(nw, n), v(n), hist(n))
-    call getcwd(rootdir)
-    write(*, *) rootdir
 
+    !$omp parallel do &
+    !$omp private(i, hist, v) &
+    !$omp shared(p_biased, w)
     do i = 1, nw ! loop over windows
-        cwd = trim("./" // adjustl(dir(i)))
-        call chdir(cwd)
         call prob(i, hist, v)
-        call chdir(rootdir)
         ! biased distribution of window i at coordinate xi_j
         p_biased(i, :) = hist
         ! restraining potential of window i at coordinate xi_j
         w(i, :) = dexp(-beta * v)
     end do
+    !$omp end parallel do
 
     call unbias(w, p_biased)
 
@@ -38,10 +37,11 @@ end program
 
 subroutine unbias(w, p_biased)
     use global
+    use omp_lib
     implicit none
 
     integer i, j, k
-    real*8 eps, fi_old, pmin, tmp1, tmp2
+    real*8 eps, fi_old, pmin, tmp1, tmp2, wtime
     real*8 numerator, denominator, fi_new, invbeta
     real*8 p_unbiased(n), fi(nw), tmp(n)
     character(len=30) ::  date
@@ -50,8 +50,11 @@ subroutine unbias(w, p_biased)
     fi = 1.d0 ! initial guess of unity for fi = dexp(-fi*beta)
     eps = tol
     k = 0
+    wtime = omp_get_wtime()
     do while(eps.ge.tol)
-        !$omp parallel do private(j) shared(ni, w, fi, p_biased, p_unbiased) reduction(+:denominator, numerator)
+        !$omp parallel do &
+        !$omp private(j, i, denominator, numerator, tmp1) &
+        !$omp shared(ni, w, fi, p_biased, p_unbiased)
         do j = 1, n
             numerator = 0.d0
             denominator = 0.d0
@@ -69,6 +72,10 @@ subroutine unbias(w, p_biased)
 
         !compute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
         eps = 0.d0
+        !$omp parallel do &
+        !$omp private(j, i, fi_new, fi_old) &
+        !$omp shared(w, fi, p_unbiased) &
+        !$omp reduction(+: eps)
         do i = 1, nw
             fi_old = fi(i)
             fi_new = 0.d0
@@ -78,9 +85,13 @@ subroutine unbias(w, p_biased)
             fi(i) = fi_new
             eps = eps + (1.d0 - fi_new / fi_old) ** 2
         end do
+        !$omp end parallel do
         k = k + 1
         if(mod(k, 10000).eq.1) write(*, *) k, eps
     end do
+    wtime = omp_get_wtime() - wtime
+    !open(10,file='free_ener.dat', access='append')
+    write(10, '(a,f6.2,a)') ' # Unbiasing took ', wtime, 's'
     write(*,*) 'converged after ', k, ' loops'
 
     !find free energy shift
@@ -95,12 +106,15 @@ subroutine unbias(w, p_biased)
     end if
 
     !print pmf
-    open(10,file='free_ener.dat', access='append')
+    !open(10,file='free_ener.dat', access='append')
     do j = 1, n
         tmp1 = xbin(j) / fac
         tmp2 = (-invbeta * dlog(p_unbiased(j)) + pmin) * fac1
         write(10, '(2f12.7)') tmp1, tmp2
     end do
+    call system('touch exit')
+    call chdir('..')
+    call folderloop(-1)
 
     call fdate(date)
     write(10, *) '# program ended on ', date

@@ -2,15 +2,29 @@ subroutine read_conf()
     use global
     implicit none
 
+    logical ex
+
     open(unit=20,file="config", action="read")
-    read(20,*) nw
+    read(20, *) nw
     allocate(dir(nw), xi(nw), nsteps(nw), ni(nw), ks(nw))
-    read(20,*) wbin ! unit in angstrom
-    read(20,*) ncut
-    read(20,*) temp
-    read(20,*) tol
+    read(20, *) wbin ! unit in angstrom
+    read(20, *) ncut
+    read(20, *) temp
+    read(20, *) tol
     read(20, *) dir
     close(20)
+    !!! inquire works differently in ifort and gfortran
+    !!! thinking to use a $FC variable in makefile to address this
+    inquire(directory="./debug", exist=ex)
+    if (ex) then
+        write(*, *) "Dir debug already exists. Cleaning it up."
+    !!! if previous job wasn't terminated finished, doing so may lose files
+    !!! currently I can back everything up once
+    !!! might be solved by inquire
+        call system("rm -f debug/*")
+    else
+        call system("mkdir -p debug")
+    end if
 
 end subroutine
 
@@ -34,7 +48,8 @@ subroutine folderloop(sgn)
     open(unit=11, file='xi')
     read(11, *) xi
     close(11)
-    ks = 0.3
+    ks(:51) = 0.1
+    ks(52:) = 0.3
     nb = 1
     natom = 1
     nsteps = 3d4
@@ -59,13 +74,21 @@ subroutine init_param(date)
     use omp_lib
     use global
     implicit none
-    integer i
-    logical ex
+    integer i, ind1, ind2
+    real*8 x(nw)
     character(len=30), intent(in) ::  date
 
     wbin = wbin * 1
-    xmax = (3 * xi(nw) - xi(nw-1)) * 1 * 0.5
-    xmin = (3 * xi(1) - xi(2)) * 1 * 0.5
+    ! in case the xi array is not sorted
+    ! adding a sort function?
+    ind1 = maxloc(xi, 1)
+    x = [xi(:ind1-1), xi(ind1+1:)]
+    ind2 = maxloc(x, 1)
+    xmax = (3 * xi(ind1) - x(ind2)) * 1 * 0.5
+    ind1 = minloc(xi, 1)
+    x = [xi(:ind1-1), xi(ind1+1:)]
+    ind2 = minloc(x, 1)
+    xmin = (3 * xi(ind1) - x(ind2)) * 1 * 0.5
     n = dint((xmax - xmin) / wbin) ! total number of bins
     allocate(xbin(n))
     beta = 1.d0 / kb / temp
@@ -79,22 +102,10 @@ subroutine init_param(date)
     write(10, *) '# beta: ', beta
     write(10, *) '# number of windows: ', nw
     write(10, *) '# program started on ', date
-    write ( 10, '(a,i8)' ) &
-        '# the number of processors available: ', omp_get_num_procs ()
-    write ( 10, '(a,i8)' ) &
-        '# the number of threads available: ', omp_get_max_threads ()
-    !!! inquire works differently in ifort and gfortran
-    !!! thinking to use a $FC variable in makefile to address this
-    inquire(directory="./debug", exist=ex)
-    if (ex) then
-        write(*, *) "Dir debug already exists. Cleaning it up."
-    !!! if previous job wasn't terminated finished, doing so may lose files
-    !!! currently I can back everything up once
-    !!! might be solved by inquire
-        call system("rm -f debug/*")
-    else
-        call system("mkdir -p debug")
-    end if
+    write(10, '(a,i8)' ) &
+        ' # the number of processors available: ', omp_get_num_procs ()
+    write(10, '(a,i8)' ) &
+        ' # the number of threads available: ', omp_get_max_threads ()
     call chdir('./debug')
 end subroutine
 

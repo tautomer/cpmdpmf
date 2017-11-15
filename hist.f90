@@ -23,7 +23,7 @@ subroutine prob(i, hist, v)
     uin = uin + 2 * nw
     open(unit=uin, file=output, status='unknown')
     uin = uin - nw
-    open(unit=uin, file=test, status='unknown')
+    !open(unit=uin, file=test, status='unknown')
 
     hist = 0
     if(nb.eq.1) then

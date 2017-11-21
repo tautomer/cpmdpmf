@@ -114,7 +114,7 @@ subroutine unbias(w, p_biased)
     !open(10,file='free_ener.dat', access='append')
     do j = 1, n
         tmp1 = xbin(j) / fac
-        tmp2 = (-invbeta * dlog(p_unbiased(j)) + pmin) * fac1
+        tmp2 = (-invbeta * dlog(tmp(j)) + pmin) * fac1
         write(10, '(2f12.7)') tmp1, tmp2
     end do
     call system('touch exit')

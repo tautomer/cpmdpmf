@@ -49,7 +49,7 @@ subroutine read_traj(i, hist, udebug)
     end do
 
     do k = ncut + 1, nsteps(i)
-        read(uin, *) junk, dist
+        read(uin, *) junk, junk, dist, dist
         dist = dist - xmin
         dist = dist / wbin
         if((dist.ge.n).or.(dist.lt.0))  cycle

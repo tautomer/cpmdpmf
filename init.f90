@@ -35,7 +35,7 @@ subroutine folderloop(sgn)
     integer i
     integer, intent(in) :: sgn
     character(len=12) :: path, rmtmp
-    character(len=70) :: getcfg
+    character(len=80) :: getcfg
     character(len=200) :: getmol
 
     getcfg = "grep DIF inp-2 | cut -d' ' -f4-8 > tmpin; sed -n '/MAXS/{n;p;}'&

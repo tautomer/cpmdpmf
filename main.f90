@@ -58,7 +58,7 @@ subroutine unbias(w, p_biased)
         do j = 1, n
             numerator = 0.d0
             denominator = 0.d0
-            !computing the denominator and numerator
+            !c$omputing the denominator and numerator
             do i =1, nw
                 denominator = denominator + ni(i)*w(i,j)/fi(i)
                 numerator = numerator + ni(i)*p_biased(i,j)
@@ -70,7 +70,7 @@ subroutine unbias(w, p_biased)
         end do
         !$omp end parallel do
 
-        !compute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
+        !c$ompute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
         eps = 0.d0
         !$omp parallel do &
         !$omp private(j, i, fi_new, fi_old) &
@@ -99,11 +99,12 @@ subroutine unbias(w, p_biased)
     k = maxloc(p_unbiased, dim=1)
     j = n / 2
     pmin = invbeta * dlog(maxval(p_unbiased))
-    if(k.gt.j) then
-        tmp = [p_unbiased(n:n-j+1:-1), p_unbiased(j+1:n)]
-    else
-        tmp = [p_unbiased(1:j), p_unbiased(j+1:1:-1)]
-    end if
+    tmp = p_unbiased
+    !if(k.gt.j) then
+    !    tmp = [p_unbiased(n:n-j+1:-1), p_unbiased(j+1:n)]
+    !else
+    !    tmp = [p_unbiased(1:j), p_unbiased(j+1:1:-1)]
+    !end if
 
     !print pmf
     !open(10,file='free_ener.dat', access='append')

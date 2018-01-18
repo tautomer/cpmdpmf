@@ -9,6 +9,7 @@ subroutine read_conf()
     allocate(dir(nw), xi(nw), nsteps(nw), ni(nw), ks(nw))
     read(20, *) wbin ! unit in angstrom
     read(20, *) ncut
+    read(20, *) nskip
     read(20, *) temp
     read(20, *) tol
     read(20, *) dir
@@ -42,7 +43,7 @@ subroutine folderloop(sgn)
              & inp-2 >> tmpin"
     getmol = "m=$(grep -c TROT inp-2); if [[ $m -eq 0 ]]; then nb=1; else nb=$(&
              &sed -n '/TROT/{n;p;}' inp-2); fi; nat=$(wc -l $(ls GEOMETRY*.xyz &
-             &| head -1) | cut -d' ' -f1); echo $nb $nat >> tmpin"
+             &| head -1) | cut -d' ' -f1); echo $nb $(($nat-2)) >> tmpin"
     rmtmp = "rm -f tmpin"
     call getcwd(rootdir)
     do i = 1, nw
@@ -56,6 +57,7 @@ subroutine folderloop(sgn)
         if(i.eq.1) read(11, *) nb, natom
         close(11)
         call movefile(i, sgn)
+        call system(rmtmp)
         call chdir(rootdir)
     end do
 end subroutine
@@ -68,17 +70,19 @@ subroutine init_param(date)
     real*8 x(nw)
     character(len=30), intent(in) ::  date
 
-    wbin = wbin * 1
+    wbin = wbin * fac
+    xi = xi * fac
+    nsteps = (nsteps - ncut) / nskip
     ! in case the xi array is not sorted
     ! adding a sort function?
     ind1 = maxloc(xi, 1)
     x = [xi(:ind1-1), xi(ind1+1:)]
     ind2 = maxloc(x, 1)
-    xmax = (3 * xi(ind1) - x(ind2)) * 1 * 0.5
+    xmax = (3 * xi(ind1) - x(ind2)) * 0.5
     ind1 = minloc(xi, 1)
     x = [xi(:ind1-1), xi(ind1+1:)]
     ind2 = minloc(x, 1)
-    xmin = (3 * xi(ind1) - x(ind2)) * 1 * 0.5
+    xmin = (3 * xi(ind1) - x(ind2)) * 0.5
     n = dint((xmax - xmin) / wbin) ! total number of bins
     allocate(xbin(n))
     beta = 1.d0 / kb / temp
@@ -110,6 +114,7 @@ subroutine movefile(i, sgn)
         if(nb.eq.1) then
             input = ' CONSTRAINT'
         else
+!            input = ' bk'
             input = ' TRAJECTORY'
         end if
         write(str_i, *) i

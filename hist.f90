@@ -48,14 +48,17 @@ subroutine read_traj(i, hist, udebug)
         read(uin, *)
     end do
 
-    do k = ncut + 1, nsteps(i)
+    do k = 1, nsteps(i)
         read(uin, *) junk, junk, dist, dist
-        dist = dist - xmin
+        dist = dist - xmin + xi(i)
         dist = dist / wbin
         if((dist.ge.n).or.(dist.lt.0))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
+        do bin = 1, nskip - 1
+            read(uin, *)
+        end do
         !write(udebug, *) hist(bin), bin
     end do
     close(uin)
@@ -80,7 +83,7 @@ subroutine read_rpmd_traj(i, hist, udebug)
         end do
     end do
 
-    do j = ncut + 1, nsteps(i)
+    do j = 1, nsteps(i)
         d = 0
         do k = 1, nb
             do l = 1, natom
@@ -107,6 +110,13 @@ subroutine read_rpmd_traj(i, hist, udebug)
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
         !write(udebug,*) hist(bin), bin
+        do k = 1, nskip - 1
+            do l = 1, nb
+                do m = 1, natom
+                    read(uin, *)
+                end do
+            end do
+        end do
     end do
     close(uin)
     close(udebug)

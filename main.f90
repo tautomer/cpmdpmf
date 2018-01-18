@@ -58,7 +58,7 @@ subroutine unbias(w, p_biased)
         do j = 1, n
             numerator = 0.d0
             denominator = 0.d0
-            !c$omputing the denominator and numerator
+            !computing the denominator and numerator
             do i =1, nw
                 denominator = denominator + ni(i)*w(i,j)/fi(i)
                 numerator = numerator + ni(i)*p_biased(i,j)
@@ -70,7 +70,7 @@ subroutine unbias(w, p_biased)
         end do
         !$omp end parallel do
 
-        !c$ompute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
+        !compute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
         eps = 0.d0
         !$omp parallel do &
         !$omp private(j, i, fi_new, fi_old) &

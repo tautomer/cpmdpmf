@@ -12,5 +12,5 @@ then
 else
 	FLAGS=$flag2
 fi
-make FLAGS=$FLAGS
+make FLAGS="$FLAGS"
 rm -f *.o

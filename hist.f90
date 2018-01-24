@@ -136,12 +136,12 @@ subroutine get_biased(i, hist, v, udebug)
     uout = udebug + nw
     k = ks(i) / 2
     !     compute normalized distribution and biasing potential
-    write(uout,'(a)') '# coordinate     potential     probability'
+    write(uout,'(a)') '# coordinate     probability     potential'
     do j = 1, n
         hist(j) = hist(j) / ni(i) ! normalized probality at tmp3
         tmp = xbin(j) - xi(i)
         v(j) = k * tmp ** 2  ! biasing window potential
-        write(uout, '(4f20.7)') xbin(j), v(j), hist(j)
+        write(uout, '(4f20.7)') xbin(j), hist(j), v(j)
     end do
     close(uout)
     return

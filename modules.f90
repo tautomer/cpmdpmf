@@ -7,6 +7,6 @@ module global
     real*8, allocatable :: xi(:), ni(:), xbin(:), ks(:)
     real*8 wbin, temp, beta, tol
     real*8 xmax, xmin
-    character(len=100) :: rootdir
+    character(len=200) :: rootdir
     character(len=10), allocatable :: dir(:)
 end module global

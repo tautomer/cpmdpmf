@@ -41,9 +41,9 @@ subroutine folderloop(sgn)
 
     getcfg = "grep DIF inp-2 | cut -d' ' -f4-8 > tmpin; sed -n '/MAXS/{n;p;}'&
              & inp-2 >> tmpin"
-    getmol = "m=$(grep -c TROT inp-2); if [[ $m -eq 0 ]]; then nb=1; else nb=$(&
-             &sed -n '/TROT/{n;p;}' inp-2); fi; nat=$(wc -l $(ls GEOMETRY*.xyz &
-             &| head -1) | cut -d' ' -f1); echo $nb $(($nat-2)) >> tmpin"
+    getmol = "m=$(grep -c INTEG inp-2); if [[ $m -eq 0 ]]; then nb=1; else nb=&
+             $(sed -n '/TROT/{n;p;}' inp-2); fi; nat=$(wc -l $(ls GEOMETRY*.xy&
+             &z| head -1) | cut -d' ' -f1); echo $nb $(($nat-2)) >> tmpin"
     rmtmp = "rm -f tmpin"
     call getcwd(rootdir)
     do i = 1, nw

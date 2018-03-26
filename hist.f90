@@ -21,7 +21,7 @@ subroutine prob(i, hist, v)
     uin = uin + 2 * nw
     open(unit=uin, file=output, status='unknown')
     uin = uin - nw
-    !open(unit=uin, file=test, status='unknown')
+    open(unit=uin, file=test, status='unknown')
 
     hist = 0
     if(nb.eq.1) then
@@ -84,25 +84,21 @@ subroutine read_rpmd_traj(i, hist, udebug)
     end do
 
     do j = 1, nsteps(i)
-        d = 0
+        dist = 0
         do k = 1, nb
             do l = 1, natom
                 read(uin, *) junk, r(l, :)
             end do
+            l1 = 0
+            l2 = 0
             do l = 1, 3
-                do m = 1, 3
-                    d(l, m) = d(l, m) + r(ind(l), m)
-                end do
+                l1 = l1 + (r(ind(1), l) - r(ind(2), l)) ** 2
+                l2 = l2 + (r(ind(3), l) - r(ind(2), l)) ** 2
             end do
+            dist = dist + sqrt(l1) - sqrt(l2)
         end do
-        d = d / nb
-        l1 = 0
-        l2 = 0
-        do l = 1, 3
-            l1 = l1 + (d(1, l) - d(2, l)) ** 2
-            l2 = l2 + (d(3, l) - d(2, l)) ** 2
-        end do
-        dist = sqrt(l1) - sqrt(l2)
+        dist = dist / nb
+        !write(udebug, *) j, dist
         dist = dist - xmin
         dist = dist / wbin
         if((dist.ge.n).or.(dist.lt.0))  cycle

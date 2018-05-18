@@ -1,5 +1,7 @@
 subroutine prob(i, hist, v)
+#if defined(_openmp)
     use omp_lib
+#endif
     use global
     implicit none
 
@@ -16,7 +18,11 @@ subroutine prob(i, hist, v)
     output = trim(prefix // adjustl(str_i)) // out_sub
     test = trim(prefix // adjustl(str_i)) // test_sub
     write(*, *) i, output
+#if defined(_openmp)
     uin = 20 + omp_get_thread_num()
+#else
+    uin = 20
+#endif
     open(unit=uin, file=input, status='old')
     uin = uin + 2 * nw
     open(unit=uin, file=output, status='unknown')
@@ -24,7 +30,7 @@ subroutine prob(i, hist, v)
     !open(unit=uin, file=test, status='unknown')
 
     hist = 0
-    if(nb.eq.1) then
+    if(nb == 1) then
         call read_traj(i, hist, uin)
     else
         call read_rpmd_traj(i, hist, uin)
@@ -38,29 +44,36 @@ subroutine read_traj(i, hist, udebug)
     use global
     implicit none
 
-    integer k, bin, junk, uin
+    integer k, bin, junk, uin, err
     real*8 dist
     integer, intent(in) :: i, udebug
     real*8, intent(out) :: hist(n)
 
     uin = udebug - nw
     do k = 1, ncut
-        read(uin, *)
+        read(uin, *, iostat=err)
+        if(err /= 0) call stopgm(nw, 'no enough data in CONSTRAINT')
     end do
 
-    do k = 1, nsteps(i)
-        read(uin, *) junk, junk, dist, dist
+    outer: do
+        read(uin, *, iostat=err) junk, junk, dist, dist
+        if(err > 0) then
+            call stopgm(nw, 'error in reading CONSTRAINT file')
+        else if(err < 0) then
+            exit
+        end if
         dist = dist - xmin + xi(i)
         dist = dist / wbin
-        if((dist.ge.n).or.(dist.lt.0))  cycle
+        if((dist > n).or.(dist < 0))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
         do bin = 1, nskip - 1
-            read(uin, *)
+            read(uin, *, iostat=err)
+            if(err < 0) exit outer
         end do
         !write(udebug, *) hist(bin), bin
-    end do
+    end do outer
     close(uin)
     close(udebug)
     return
@@ -70,54 +83,57 @@ subroutine read_rpmd_traj(i, hist, udebug)
     use global
     implicit none
 
-    integer j, k, l, m, bin, junk, nline, uin
-    real*8 r(natom, 3), d(3, 3), dist, l1, l2
+    integer j, k, l, m, bin, junk, nline, uin, err
+    real*8 r(natom, 3), xy(3), xz(3), dxz, r2, d
+    real*8 dist, l1, l2
     integer, intent(in) :: i, udebug
     real*8, intent(out) :: hist(n)
 
     uin = udebug - nw
-    nline = nb * natom
-    do k = 1, ncut
-        do j = 1, nline
-            read(uin, *)
-        end do
+    nline = nb * natom * ncut
+    do k = 1, nline
+        read(uin, *, iostat=err)
+        if(err /= 0) call stopgm(nw, 'no enough data in TRAJECTORY')
     end do
 
-    do j = 1, nsteps(i)
-        d = 0
+    nline = nb * natom * (nskip - 1)
+    outer: do
+        dist = 0
         do k = 1, nb
             do l = 1, natom
-                read(uin, *) junk, r(l, :)
+                read(uin, *, iostat=err) junk, r(l, :)
+                if(err > 0) then
+                    call stopgm(nw, 'error in reading CONSTRAINT file')
+                else if(err < 0) then
+                    exit outer
+                end if
             end do
-            do l = 1, 3
-                do m = 1, 3
-                    d(l, m) = d(l, m) + r(ind(l), m)
-                end do
-            end do
+            xy = r(ind(2), :) - r(ind(1), :)
+            xz = r(ind(3), :) - r(ind(1), :)
+            r2 = 0
+            r2 = r2 + xz(1) ** 2
+            r2 = r2 + xz(2) ** 2
+            r2 = r2 + xz(3) ** 2
+            dxz = dsqrt(r2)
+            d = 0
+            d = d + xy(1) * xz(1)
+            d = d + xy(2) * xz(2)
+            d = d + xy(3) * xz(3)
+            dist = dist + d / dxz
         end do
-        d = d / nb
-        l1 = 0
-        l2 = 0
-        do l = 1, 3
-            l1 = l1 + (d(1, l) - d(2, l)) ** 2
-            l2 = l2 + (d(3, l) - d(2, l)) ** 2
-        end do
-        dist = sqrt(l1) - sqrt(l2)
+        dist = dist / nb
         dist = dist - xmin
         dist = dist / wbin
-        if((dist.ge.n).or.(dist.lt.0))  cycle
+        if((dist < n).or.(dist > 0))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
         !write(udebug,*) hist(bin), bin
-        do k = 1, nskip - 1
-            do l = 1, nb
-                do m = 1, natom
-                    read(uin, *)
-                end do
-            end do
+        do k = 1, nline
+            read(uin, *, iostat=err)
+            if(err < 0) exit outer
         end do
-    end do
+    end do outer
     close(uin)
     close(udebug)
     return
@@ -135,13 +151,13 @@ subroutine get_biased(i, hist, v, udebug)
 
     uout = udebug + nw
     k = ks(i) / 2
-    !     compute normalized distribution and biasing potential
+    ! compute normalized distribution and biasing potential
     write(uout,'(a)') '# coordinate     probability     potential'
     do j = 1, n
         hist(j) = hist(j) / ni(i) ! normalized probality at tmp3
         tmp = xbin(j) - xi(i)
         v(j) = k * tmp ** 2  ! biasing window potential
-        write(uout, '(4f20.7)') xbin(j), hist(j), v(j)
+        write(uout, '(3f20.7)') xbin(j), hist(j), v(j)
     end do
     close(uout)
     return

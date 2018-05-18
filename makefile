@@ -4,12 +4,12 @@
 #
 
 objects = \
-modules.o main.o hist.o init.o
+modules.o stopgm.o init.o hist.o main.o 
 
 wham.out : $(objects)
 	ifort ${FLAGS} -o wham.out $(objects)
 
-$(objects): %.o : %.f90
+$(objects): %.o : %.F90
 	ifort ${FLAGS} -c $<
 
 #

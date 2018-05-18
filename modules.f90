@@ -9,4 +9,5 @@ module global
     real*8 xmax, xmin
     character(len=200) :: rootdir
     character(len=10), allocatable :: dir(:)
+    logical symm
 end module global

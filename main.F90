@@ -1,5 +1,5 @@
 program wham
-#if defined(_openmp)
+#if defined(_OPENMP)
     use omp_lib
 #endif
     use global
@@ -22,7 +22,7 @@ program wham
     call movefile(nw, 1)
     allocate(p_biased(nw , n), w(nw, n), v(n), hist(n))
 
-#if defined(_openmp)
+#if defined(_OPENMP)
     !$omp parallel do &
     !$omp private(i, hist, v) &
     !$omp shared(p_biased, w)
@@ -34,7 +34,7 @@ program wham
         ! restraining potential of window i at coordinate xi_j
         w(i, :) = dexp(-beta * v)
     end do
-#if defined(_openmp)
+#if defined(_OPENMP)
     !$omp end parallel do
 #endif
 
@@ -43,7 +43,7 @@ program wham
 end program
 
 subroutine unbias(w, p_biased)
-#if defined(_openmp)
+#if defined(_OPENMP)
     use omp_lib
 #endif
     use global
@@ -51,7 +51,7 @@ subroutine unbias(w, p_biased)
 
     integer i, j, k
     real*8, intent(in) :: w(nw, n), p_biased(nw, n)
-    real*8 eps, fi_old, pmin, tmp1, tmp2, wtime, start, end
+    real*8 eps, fi_old, pmin, tmp1, tmp2, wtime, st, ft
     real*8 numerator, denominator, fi_new, invbeta
     real*8 p_unbiased(n), fi(nw), tmp(n)
     character(len=30) ::  date
@@ -60,13 +60,13 @@ subroutine unbias(w, p_biased)
     fi = 1.0 ! initial guess of unity for fi = dexp(-fi*beta)
     eps = tol
     k = 0
-#if defined(_openmp)
-    start = omp_get_wtime()
+#if defined(_OPENMP)
+    st = omp_get_wtime()
 #else
-    call cpu_time(start)
+    call cpu_time(st)
 #endif
     do while(eps >= tol)
-#if defined(_openmp)
+#if defined(_OPENMP)
         !$omp parallel do &
         !$omp private(j, i, denominator, numerator, tmp1) &
         !$omp shared(ni, w, fi, p_biased, p_unbiased)
@@ -84,13 +84,13 @@ subroutine unbias(w, p_biased)
             if(tmp1 == 0) tmp1 = 1.d-15
             p_unbiased(j) = tmp1
         end do
-#if defined(_openmp)
+#if defined(_OPENMP)
         !$omp end parallel do
 #endif
 
         !compute new fi based and the old use eps=sum{(1-fi_new/fi_old)**2}
         eps = 0.d0
-#if defined(_openmp)
+#if defined(_OPENMP)
         !$omp parallel do &
         !$omp private(j, i, fi_new, fi_old) &
         !$omp shared(w, fi, p_unbiased) &
@@ -105,24 +105,24 @@ subroutine unbias(w, p_biased)
             fi(i) = fi_new
             eps = eps + (1.d0 - fi_new / fi_old) ** 2
         end do
-#if defined(_openmp)
+#if defined(_OPENMP)
         !$omp end parallel do
 #endif
         k = k + 1
         if(mod(k, 10000) == 1) then
             write(*, *) k, eps
             inquire(file="../exit", exist=ex)
-            if(ex) call stopgm(nw, 'qoft exit')
+            if(ex) call stopgm(nw, 'soft exit')
         end if
     end do
-#if defined(_openmp)
-    end = omp_get_wtime()
+#if defined(_OPENMP)
+    ft = omp_get_wtime()
 #else
-    call cpu_time(end)
+    call cpu_time(ft)
 #endif
-    wtime = end - start
+    wtime = ft - st
     !open(10,file='free_ener.dat', access='append')
-    write(10, '(a,f6.2,a)') ' # Unbiasing took ', wtime, 's'
+    write(10, '(a,f6.2,a)') '# Unbiasing took ', wtime, 's'
     write(*, '(a, i9, a)') 'converged after ', k, ' loops'
 
     !find free energy shift

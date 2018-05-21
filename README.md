@@ -17,3 +17,6 @@ Todo list
 1. Reformat the input file.
 2. Split the global module to multiple modules
 3. Determine if nsteps array is still useful or not.
+4. Error handling need rework.
+5. Conditional compiliation for gorfran and ifort.
+6. Rewrite reading data part.

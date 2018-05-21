@@ -1,5 +1,5 @@
 subroutine prob(i, hist, v)
-#if defined(_openmp)
+#if defined(_OPENMP)
     use omp_lib
 #endif
     use global
@@ -18,7 +18,7 @@ subroutine prob(i, hist, v)
     output = trim(prefix // adjustl(str_i)) // out_sub
     test = trim(prefix // adjustl(str_i)) // test_sub
     write(*, *) i, output
-#if defined(_openmp)
+#if defined(_OPENMP)
     uin = 20 + omp_get_thread_num()
 #else
     uin = 20
@@ -52,13 +52,13 @@ subroutine read_traj(i, hist, udebug)
     uin = udebug - nw
     do k = 1, ncut
         read(uin, *, iostat=err)
-        if(err /= 0) call stopgm(nw, 'no enough data in CONSTRAINT')
+        if(err /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
     end do
 
     outer: do
         read(uin, *, iostat=err) junk, junk, dist, dist
         if(err > 0) then
-            call stopgm(nw, 'error in reading CONSTRAINT file')
+            call stopgm(nw, 'error in reading data from window ', dir(i))
         else if(err < 0) then
             exit
         end if
@@ -83,7 +83,7 @@ subroutine read_rpmd_traj(i, hist, udebug)
     use global
     implicit none
 
-    integer j, k, l, m, bin, junk, nline, uin, err
+    integer j, k, bin, junk, nline, uin, err
     real*8 r(natom, 3), xy(3), xz(3), dxz, r2, d
     real*8 dist, l1, l2
     integer, intent(in) :: i, udebug
@@ -91,19 +91,20 @@ subroutine read_rpmd_traj(i, hist, udebug)
 
     uin = udebug - nw
     nline = nb * natom * ncut
-    do k = 1, nline
+    do j = 1, nline
         read(uin, *, iostat=err)
-        if(err /= 0) call stopgm(nw, 'no enough data in TRAJECTORY')
+        if(err /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
     end do
 
     nline = nb * natom * (nskip - 1)
     outer: do
         dist = 0
-        do k = 1, nb
-            do l = 1, natom
-                read(uin, *, iostat=err) junk, r(l, :)
+        do j = 1, nb
+            do k = 1, natom
+                read(uin, *, iostat=err) junk, r(k, :)
                 if(err > 0) then
-                    call stopgm(nw, 'error in reading CONSTRAINT file')
+                    call stopgm(nw, 'error in reading data from window ', &
+                                dir(i))
                 else if(err < 0) then
                     exit outer
                 end if
@@ -124,12 +125,12 @@ subroutine read_rpmd_traj(i, hist, udebug)
         dist = dist / nb
         dist = dist - xmin
         dist = dist / wbin
-        if((dist < n).or.(dist > 0))  cycle
+        if((dist < 0).or.(dist > n))  cycle
         bin = 1 + dint(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
         !write(udebug,*) hist(bin), bin
-        do k = 1, nline
+        do j = 1, nline
             read(uin, *, iostat=err)
             if(err < 0) exit outer
         end do

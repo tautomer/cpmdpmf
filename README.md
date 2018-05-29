@@ -8,10 +8,15 @@ How it works
 3. Details on each windows are read directly from the CPMD input files.
 4. TRAJECTORIES are moved to debug folder for parallelization.
 5. Number of skips is read form input.
-6. Histograms are written in files under debug.
+6. Symmetry of the system is read from the input file.
+7. Histograms are written in files under debug.
+8. Trajectory files will be moved back when the program faces error termination.
 
 Todo list
 ======
-1. Apply symmetry smartly or by input keywords.
-2. Properly handle trajectory files when the program exits incorrectly.
-3. Reformat the input file.
+1. Reformat the input file.
+2. Split the global module to multiple modules
+3. Determine if nsteps array is still useful or not.
+4. Error handling need rework.
+5. Conditional compiliation for gorfran and ifort.
+6. Rewrite reading data part.

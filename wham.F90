@@ -47,7 +47,7 @@ subroutine prob(i, hist, v)
     implicit none
 
     integer :: uin
-    character(len=12) :: flnm
+    character(len=11) :: flnm
     character(len=20) :: input, output, test
     integer, intent(in) :: i
     real*8, intent(out) :: hist(n), v(n)
@@ -57,20 +57,20 @@ subroutine prob(i, hist, v)
     else 
         flnm = "/TRAJECTORY"
     end if
-    write(input, '(3a)') "../", trim(dir(i)), flnm
-    write(output, '(2a)') trim(dir(i)), ".output"
-!    write(test, '(2a)') trim(dir(i)), ".test"
+    write(input, "(3a)") "../", trim(dir(i)), flnm
+    write(output, "(2a)") trim(dir(i)), ".output"
+!    write(test, "(2a)") trim(dir(i)), ".test"
     write(*, *) i, output
 #if defined(_OPENMP)
     uin = 20 + omp_get_thread_num()
 #else
     uin = 20
 #endif
-    open(unit=uin, file=input, status='old')
+    open(unit=uin, file=input, status="old")
     uin = uin + 2 * nw
-    open(unit=uin, file=output, status='unknown')
+    open(unit=uin, file=output, status="unknown")
     uin = uin - nw
-    !open(unit=uin, file=test, status='unknown')
+    !open(unit=uin, file=test, status="unknown")
 
     hist = 0
     if(nb == 1) then
@@ -96,13 +96,13 @@ subroutine read_traj(i, hist, udebug)
     uin = udebug - nw
     do k = 1, ncut
         read(uin, *, iostat=ioerr)
-        if(ioerr /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
+        if(ioerr /= 0) call stopgm("No enough data in window ", dir(i))
     end do
 
     outer: do
         read(uin, *, iostat=ioerr) junk, junk, dist, dist
         if(ioerr > 0) then
-            call stopgm(nw, 'ioerror in reading data from window ', dir(i))
+            call stopgm("Error in reading data from window ", dir(i))
         else if(ioerr < 0) then
             exit
         end if
@@ -137,7 +137,7 @@ subroutine read_rpmd_traj(i, hist, udebug)
     nline = nb * natom * ncut
     do j = 1, nline
         read(uin, *, iostat=ioerr)
-        if(ioerr /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
+        if(ioerr /= 0) call stopgm("No enough data in window ", dir(i))
     end do
 
     nline = nb * natom * (nskip - 1)
@@ -147,8 +147,7 @@ subroutine read_rpmd_traj(i, hist, udebug)
             do k = 1, natom
                 read(uin, *, iostat=ioerr) junk, coor(k, :)
                 if(ioerr > 0) then
-                    call stopgm(nw, 'ioerror in reading data from window ', &
-                                dir(i))
+                    call stopgm("Error in reading data from window ", dir(i))
                 else if(ioerr < 0) then
                     exit outer
                 end if
@@ -192,12 +191,12 @@ subroutine get_biased(i, hist, v, udebug)
     uout = udebug + nw
     k = ks(i) / 2
     ! compute normalized distribution and biasing potential
-    write(uout,'(a)') '# coordinate     probability     potential'
+    write(uout,"(a)") "# coordinate     probability     potential"
     do j = 1, n
         hist(j) = hist(j) / ni(i) ! normalized probality at tmp3
         tmp = xbin(j) - xi(i)
         v(j) = k * tmp ** 2  ! biasing window potential
-        write(uout, '(3f20.7)') xbin(j), hist(j), v(j)
+        write(uout, "(3f20.7)") xbin(j), hist(j), v(j)
     end do
     close(uout)
     return
@@ -274,7 +273,7 @@ subroutine unbias(w, p_biased, prim_pmf)
         if(mod(k, 10000) == 1) then
             write(*, *) k, eps
             inquire(file="../exit", exist=ex)
-            if(ex) call stopgm(nw, 'soft exit')
+            if(ex) call stopgm("Soft exit")
         end if
     end do
 #if defined(_OPENMP)
@@ -283,9 +282,9 @@ subroutine unbias(w, p_biased, prim_pmf)
     call cpu_time(ft)
 #endif
     wtime = ft - st
-    !open(10,file='free_ener.dat', access='append')
-    write(10, '(a,f6.2,a)') '# Unbiasing took ', wtime, 's'
-    write(*, '(a, i9, a)') 'converged after ', k, ' loops'
+    !open(10,file="free_ener.dat", access="append")
+    write(10, "(a,f6.2,a)") "# Unbiasing took ", wtime, "s"
+    write(*, "(a, i9, a)") "converged after ", k, " loops"
 
     prim_pmf = -kt * dlog(p_unbiased)
     pmin = minval(prim_pmf)

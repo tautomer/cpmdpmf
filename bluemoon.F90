@@ -81,10 +81,10 @@ subroutine read_data(i, ucons, dadx, msg)
     nloop = nb * ncut
     do j = 1, nloop
         read(ucons, *, iostat=err)
-        if(err /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
+        if(err /= 0) call stopgm('No enough data in window ', dir(i))
         do k = 1, natom
             read(utraj, *, iostat=err)
-            if(err /= 0) call stopgm(nw, 'no enough data in window ', dir(i))
+            if(err /= 0) call stopgm('No enough data in window ', dir(i))
         end do
     end do
 
@@ -99,15 +99,14 @@ subroutine read_data(i, ucons, dadx, msg)
         do j = 1, nb
             read(ucons, *, iostat=err) junk, junk, lambda
             if(err > 0) then
-                call stopgm(nw, 'error in reading data from window ', dir(i))
+                call stopgm('Error in reading data from window ', dir(i))
             else if(err < 0) then
                 exit outer
             end if
             do k = 1, natom
                 read(utraj, *, iostat=err) junk, coor(k, :)
                 if(err > 0) then
-                    call stopgm(nw, 'error in reading data from window ', &
-                                dir(i))
+                    call stopgm('Error in reading data from window ', dir(i))
                 else if(err < 0) then
                     exit outer
                 end if

@@ -52,9 +52,9 @@ subroutine def_val()
     implicit none
 
     tbl = .false.
-    twham = .false. 
-    tdiff = .false. 
-    tproj = .false. 
+    twham = .false.
+    tdiff = .false.
+    tproj = .false.
     nw = 0
     temp = 0
     tol = 0
@@ -88,7 +88,7 @@ subroutine read_buffer(label, buffer, line, flag)
         tdiff = .true.
         tproj = .false.
     case ("window")
-        read(buffer, "(i0)", iostat=ioerr) nw
+        read(buffer, *, iostat=ioerr) nw
         if (ioerr > 0) then
             call stopgm("Number of windows should be an integer")
         else if (ioerr < 0) then
@@ -105,20 +105,20 @@ subroutine read_buffer(label, buffer, line, flag)
             temp = 300
         end if
     case ("directory")
-        if (nw == 0) call stopgm("No of windows needed to be specified first.")
+        if (nw == 0) call stopgm("No of windows needed to be specified first")
         read(buffer, *, iostat=ioerr) dir
         if (ioerr < 0) then
-            call stopgm("No of dirs provided smaller than no of windows.")
+            call stopgm("No of dirs provided smaller than no of windows")
         end if
     case ("symmetry")
         read(buffer, *, iostat=ioerr) symm
         if (ioerr > 0) then
-            call stopgm("Symmetry of the system should be a logical variable.")
+            call stopgm("Symmetry of the system should be a logical variable")
         else if (ioerr == 0) then
             flag = 1
         end if
     case ("step")
-        read(buffer, "(3i0)", iostat=ioerr) ncut, nskip, nread
+        read(buffer, *, iostat=ioerr) ncut, nskip, nread
         if (ioerr > 0) then
             call stopgm("Step information should be an integer")
         else if (ioerr < 0) then
@@ -143,7 +143,7 @@ subroutine read_buffer(label, buffer, line, flag)
     case ("tolerance")
         read(buffer, *, iostat=ioerr) tol
         if (ioerr > 0) then
-            call stopgm("SCF tolerance should be a real number.")
+            call stopgm("SCF tolerance should be a real number")
         else if (ioerr < 0) then
             write(*, "(a)") "Tolerance is specified, but no value &
             &provided. Use defualt value of 1d-9."
@@ -153,9 +153,9 @@ subroutine read_buffer(label, buffer, line, flag)
     case ("masses")
         read(buffer, *, iostat=ioerr) invm
         if (ioerr > 0) then
-            call stopgm("Masses should be real numbers.")
+            call stopgm("Masses should be real numbers")
         else if (ioerr < 0) then
-            call stopgm("Not all masses are provided.")
+            call stopgm("Not all masses are provided")
         end if
     case default
         write(*, "(a, i0)") "Skipping invalid label at line ", line
@@ -173,7 +173,7 @@ subroutine fix_unspecd(flag)
     integer, intent(in) :: flag
 
     if (.not.twham .and. .not.tbl) call stopgm("Neither WHAM nor blue moon is &
-    &specified.")
+    &specified")
     if (temp == 0) then
         write(*, "(a)") "Temperature not specified. Use defualt 300K instead."
         temp = 300
@@ -182,7 +182,7 @@ subroutine fix_unspecd(flag)
         write(*, "(a)") "Tolerance not specified. Use defualt 1d-9 instead."
         tol = 1d-9
     end if
-    if (tbl .and. invm(1) == 0) call stopgm("Masses needed for blue moon.")
+    if (tbl .and. invm(1) == 0) call stopgm("Masses needed for blue moon")
     if (ncut * nskip * nread < 0) then
         write(*, "(a)") "No information specified on steps. Going to read all &
         &data."
@@ -240,11 +240,10 @@ subroutine read_tmp(i)
              &d -1); [[ -z $geo ]] && exit 1; nat=$(wc -l $geo|cut -d' ' -f1);&
              &echo $nb $(($nat-2)) >> tmpin"
     msg = system(getcfg)
-    if(msg /= 0) call stopgm(0, 'inp-2 not found in window ', dir(i))
+    if(msg /= 0) call stopgm('inp-2 not found in window ', dir(i))
     if(i == 1) then
         msg = system(getmol)
-        if(msg /= 0) call stopgm(0, 'GEOMETRY*.xyz not found in window ', &
-                                 dir(i))
+        if(msg /= 0) call stopgm('GEOMETRY*.xyz not found in window ', dir(i))
     end if
     open(unit=11, file='tmpin')
     if (twham) then
@@ -316,18 +315,18 @@ subroutine init_param()
         allocate(xbin(n))
         xbin = xi
     end if
-    open(10, file='free_ener.dat', status='unknown')
-    write(10, '(a,i8)') '# number of beads: ', nb
-    write(10, '(a,f8.2)') '# beta: ', beta
-    write(10, '(a,i8)') '# number of windows: ', nw
-    write(10, '(2a)') '# program started on ', date
+    open(10, file="free_ener.dat", status="unknown")
+    write(10, "(a,i8)") "# number of beads: ", nb
+    write(10, "(a,f8.2)") "# beta: ", beta
+    write(10, "(a,i8)") "# number of windows: ", nw
+    write(10, "(2a)") "# program started on ", date
 #if defined(_OPENMP)
-    write(10, '(a,i8)') &
-        '# the number of processors available: ', omp_get_num_procs ()
-    write(10, '(a,i8)') &
-        '# the number of threads available: ', omp_get_max_threads ()
+    write(10, "(a,i8)") &
+        "# the number of processors available: ", omp_get_num_procs ()
+    write(10, "(a,i8)") &
+        "# the number of threads available: ", omp_get_max_threads ()
 #else
-    write(10, '(a)' ) '# OMP disabled'
+    write(10, "(a)" ) "# OMP disabled"
 #endif
-    call chdir('./debug')
+    call chdir("./debug")
 end subroutine

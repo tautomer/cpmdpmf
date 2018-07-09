@@ -4,7 +4,7 @@
 #
 
 objects = \
-modules.o stopgm.o init.o hist.o main.o 
+modules.o stopgm.o init.o cv.o wham.o bluemoon.o main.o 
 
 wham.out : $(objects)
 	ifort ${FLAGS} -o wham.out $(objects)

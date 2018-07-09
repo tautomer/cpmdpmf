@@ -1,16 +1,26 @@
-flag1='-fopenmp'
-flag2='-g -check all -fpe0 -warn -traceback -debug extended'
-if [[ $1 -eq 1 ]] 
+if [[ $1 -eq 1 ]]
 then
-	FLAGS=$flag1
-elif [[ $1 -eq 2 ]] 
-then
-	FLAGS=''
-elif [[ $1 -eq 3 ]] 
-then
-	FLAGS="$flag1 $flag2"
+    FC='ifort'
+	flag1='-qopenmp'
+	flag2='-g -check all -fpe0 -warn -traceback -debug extended'
 else
-	FLAGS=$flag2
+    FC='gfortran'
+	flag1='-fopenmp'
+	flag2='-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none
+	       -fbacktrace -ffree-line-length-0 -fcheck=all
+	   	   -ffpe-trap=zero,overflow,underflow -finit-real=nan'
 fi
-make FLAGS="$FLAGS"
-rm -f *.o
+if [[ $2 -eq 1 ]]
+then
+    FLAGS=$flag1
+elif [[ $2 -eq 2 ]]
+then
+    FLAGS=''
+elif [[ $2 -eq 3 ]]
+then
+    FLAGS="$flag1 $flag2"
+else
+    FLAGS=$flag2
+fi
+make FC="$FC" FLAGS="$FLAGS"
+rm -f *.o *genmod*

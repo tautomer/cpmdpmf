@@ -25,7 +25,7 @@ subroutine run_blue_moon(prim_pmf)
 
     prim_pmf(1) = 0.0
     do i = 2, nw
-        prim_pmf(i) = prim_pmf(i-1) + (dadx(i) + dadx(i-1)) * dx(i-1) * fac1
+        prim_pmf(i) = prim_pmf(i-1) + (dadx(i) + dadx(i-1)) * dx(i-1)
     end do
 #endif
 

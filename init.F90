@@ -82,11 +82,14 @@ subroutine read_buffer(label, buffer, line, flag)
         tbl = .true.
         twham = .false.
     case ("wham")
-        tbl = .true.
-        twham = .false.
+        tbl = .false.
+        twham = .true.
     case ("differ")
         tdiff = .true.
         tproj = .false.
+    case ("project")
+        tdiff = .false.
+        tproj = .true.
     case ("window")
         read(buffer, *, iostat=ioerr) nw
         if (ioerr > 0) then
@@ -194,7 +197,7 @@ subroutine fix_unspecd(flag)
         write(*, "(a)") "Bin size not specified. Use defualt 1d-2 a.u. instead."
         wbin = 1d-2
     end if
-    if (flag == 1) then
+    if (flag /= 1) then
         write(*, "(a)") "Symmetry not specified. The system is assumed to be &
         &asymmetric."
         symm = .false.
@@ -233,8 +236,7 @@ subroutine read_tmp(i)
 
     ! the name of the input file 'inp-2' is hardcoded
     ! consider a better way to get all the information here
-    getcfg = "grep DIFF inp-2 | cut -d' ' -f4-8 > tmpin; sed -n '/MAXS/{n;p;}'&
-             & inp-2 >> tmpin"
+    getcfg = "grep DIFF inp-2 | cut -d' ' -f4-8 > tmpin"
     getmol = "m=$(grep -c INTEG inp-2); if [[ $m -eq 0 ]]; then nb=1; else nb=&
              &$(sed -n '/TROT/{n;p;}' inp-2); fi; geo=$(ls GEOMETRY*.xyz | hea&
              &d -1); [[ -z $geo ]] && exit 1; nat=$(wc -l $geo|cut -d' ' -f1);&
@@ -253,7 +255,7 @@ subroutine read_tmp(i)
     end if
     if(ioerr < 0) call stopgm("Incomplete inp-2 in dir ", dir(i))
     if(i == 1) then
-        read(11, iostat=ioerr) nb, natom
+        read(11, *, iostat=ioerr) nb, natom
         if(ioerr < 0) call stopgm("Incomplete inp-2 in dir ", dir(i))
     end if
     close(11, status='delete')
@@ -273,6 +275,7 @@ subroutine init_param()
 
     xi = xi * fac
     beta = 1 / kb / temp
+    kt = kb * temp
     if(twham) then
         wbin = wbin * fac
         ! in case the xi array is not sorted
@@ -306,7 +309,6 @@ subroutine init_param()
                 invmij(i, j) = invm(i) * invm(j)
             end do
         end do
-        kt = kb * temp
         allocate(dx(nw-1))
         do i = 1, nw-1
             dx(i) = abs((xi(i+1) - xi(i))) * 0.5

@@ -28,7 +28,7 @@ subroutine write_pmf(prim_pmf)
     implicit none
 
     integer :: j, k
-    real*8 :: tmp(n), tmp1
+    real*8 :: tmp(n), tmp1, tmp2
     real*8, intent(in) :: prim_pmf(n)
 
     if(symm) then
@@ -47,7 +47,8 @@ subroutine write_pmf(prim_pmf)
     !open(10,file='free_ener.dat', access='append')
     do j = 1, n
         tmp1 = xbin(j) / fac
-        write(10, '(2f12.7)') tmp1, tmp(j)
+        tmp2 = tmp(j) * fac1
+        write(10, '(2f12.7)') tmp1, tmp2
     end do
 
     call fdate(date)

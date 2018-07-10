@@ -128,19 +128,19 @@ subroutine read_rpmd_traj(i, hist, udebug)
     use wham
     implicit none
 
-    integer :: j, k, bin, junk, nline, uin, ioerr
+    integer :: j, k, bin, junk, nloop, uin, counter, ioerr
     real*8 :: coor(natom, 3), proj, diff, dist
     integer, intent(in) :: i, udebug
     real*8, intent(out) :: hist(n)
 
     uin = udebug - nw
-    nline = nb * natom * ncut
-    do j = 1, nline
+    nloop = nb * natom * ncut
+    do j = 1, nloop
         read(uin, *, iostat=ioerr)
         if(ioerr /= 0) call stopgm("No enough data in window ", dir(i))
     end do
 
-    nline = nb * natom * (nskip - 1)
+    nloop = nb * natom * (nskip - 1)
     outer: do
         dist = 0
         do j = 1, nb
@@ -162,14 +162,18 @@ subroutine read_rpmd_traj(i, hist, udebug)
         dist = dist - xmin
         dist = dist / wbin
         if((dist < 0).or.(dist > n))  cycle
-        bin = 1 + dint(dist) ! locate bin
+        bin = 1 + int(dist) ! locate bin
         ni(i) = ni(i) + 1
         hist(bin) = hist(bin) + 1 ! place in appropriate bin
         !write(udebug,*) hist(bin), bin
-        do j = 1, nline
+        do j = 1, nloop
             read(uin, *, iostat=ioerr)
             if(ioerr < 0) exit outer
         end do
+        if(nread > ncut) then
+            counter = counter + nskip
+            if(counter >= nread) exit
+        end if
     end do outer
     close(uin)
     close(udebug)

@@ -27,7 +27,7 @@ subroutine parse_conf()
     implicit none
 
     integer :: line = 0, ioerr = 0, flag = 0, pos
-    character(len=100) :: buffer, label
+    character(len=200) :: buffer, label*20
 
     call def_val()
     do while(ioerr == 0)
@@ -74,7 +74,7 @@ subroutine read_buffer(label, buffer, line, flag)
     integer :: ioerr
     integer, intent(in) :: line
     integer, intent(inout) :: flag
-    character(len=100), intent(in) :: buffer, label
+    character(len=*), intent(in) :: buffer, label
     select case (label)
     ! general settings
     ! need fix twham & tbl & tdiff & tproj
@@ -153,7 +153,7 @@ subroutine read_buffer(label, buffer, line, flag)
             tol = 1d-9
         end if
     ! for bluemoon
-    case ("masses")
+    case ("mass")
         read(buffer, *, iostat=ioerr) invm
         if (ioerr > 0) then
             call stopgm("Masses should be real numbers")
@@ -181,11 +181,11 @@ subroutine fix_unspecd(flag)
         write(*, "(a)") "Temperature not specified. Use defualt 300K instead."
         temp = 300
     end if
-    if (tol == 0) then
-        write(*, "(a)") "Tolerance not specified. Use defualt 1d-9 instead."
-        tol = 1d-9
+    if (flag /= 1) then
+        write(*, "(a)") "Symmetry not specified. The system is assumed to be &
+        &asymmetric."
+        symm = .false.
     end if
-    if (tbl .and. invm(1) == 0) call stopgm("Masses needed for blue moon")
     if (ncut * nskip * nread < 0) then
         write(*, "(a)") "No information specified on steps. Going to read all &
         &data."
@@ -193,14 +193,17 @@ subroutine fix_unspecd(flag)
         nskip = 0
         nread = 0
     end if
-    if (wbin == 0) then
-        write(*, "(a)") "Bin size not specified. Use defualt 1d-2 a.u. instead."
-        wbin = 1d-2
-    end if
-    if (flag /= 1) then
-        write(*, "(a)") "Symmetry not specified. The system is assumed to be &
-        &asymmetric."
-        symm = .false.
+    if (tbl) then
+        if (invm(1) == 0) call stopgm("Masses needed for blue moon")
+    else
+        if (tol == 0) then
+            write(*, "(a)") "Tolerance not specified. Use defualt value 1d-9."
+            tol = 1d-9
+        end if
+        if (wbin == 0) then
+            write(*, "(a)") "Bin size not specified. Use defualt 1d-2 au."
+            wbin = 1d-2
+        end if
     end if
 
 end subroutine
@@ -236,7 +239,7 @@ subroutine read_tmp(i)
 
     ! the name of the input file 'inp-2' is hardcoded
     ! consider a better way to get all the information here
-    getcfg = "grep DIFF inp-2 | cut -d' ' -f4-8 > tmpin"
+    getcfg = "grep -B 1 'END CONS' inp-2 | head -n 1 | cut -d' ' -f4-8 > tmpin"
     getmol = "m=$(grep -c INTEG inp-2); if [[ $m -eq 0 ]]; then nb=1; else nb=&
              &$(sed -n '/TROT/{n;p;}' inp-2); fi; geo=$(ls GEOMETRY*.xyz | hea&
              &d -1); [[ -z $geo ]] && exit 1; nat=$(wc -l $geo|cut -d' ' -f1);&

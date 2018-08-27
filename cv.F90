@@ -16,7 +16,30 @@ function proj(r)
     dotxyxz = dotxyxz + xy(1) * xz(1)
     dotxyxz = dotxyxz + xy(2) * xz(2)
     dotxyxz = dotxyxz + xy(3) * xz(3)
-    proj = dotxyxz / lxz
+    proj = dotxyxz / lxz 
+
+    return
+end function
+
+function projd(r)
+    implicit none
+
+    real*8, intent(in) :: r(3, 3)
+    real*8 :: xy(3), xz(3), lxz, dotxyxz
+    real*8 :: projd
+
+    lxz = 0
+    dotxyxz = 0
+    xy = r(1, :) - r(2, :)
+    xz = r(2, :) - r(3, :)
+    lxz = lxz + xz(1) ** 2
+    lxz = lxz + xz(2) ** 2
+    lxz = lxz + xz(3) ** 2
+    lxz = dsqrt(lxz)
+    dotxyxz = dotxyxz + xy(1) * xz(1)
+    dotxyxz = dotxyxz + xy(2) * xz(2)
+    dotxyxz = dotxyxz + xy(3) * xz(3)
+    projd = dotxyxz / lxz * 2 - lxz
 
     return
 end function

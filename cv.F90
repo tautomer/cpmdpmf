@@ -8,7 +8,7 @@ function proj(r)
     lxz = 0
     dotxyxz = 0
     xy = r(1, :) - r(2, :)
-    xz = r(2, :) - r(3, :)
+    xz = r(1, :) - r(3, :)
     lxz = lxz + xz(1) ** 2
     lxz = lxz + xz(2) ** 2
     lxz = lxz + xz(3) ** 2
@@ -31,7 +31,7 @@ function projd(r)
     lxz = 0
     dotxyxz = 0
     xy = r(1, :) - r(2, :)
-    xz = r(2, :) - r(3, :)
+    xz = r(1, :) - r(3, :)
     lxz = lxz + xz(1) ** 2
     lxz = lxz + xz(2) ** 2
     lxz = lxz + xz(3) ** 2

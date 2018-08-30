@@ -226,7 +226,7 @@ end subroutine
 
 subroutine read_tmp(i)
 #if defined(__INTEL_COMPILER)
-    use ifport
+    use ifport, only: system
 #endif
     use global
     use wham
